@@ -1,0 +1,6 @@
+{
+  "notebook.defaultFormatter": "GitHub.copilot",
+  "files.associations": {
+    "string": "cpp"
+  }
+}
