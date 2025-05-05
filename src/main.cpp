@@ -1390,63 +1390,75 @@ void connecttoFirebase()
 
 void storeDateToFirebase()
 {
-  // incriment dateStoreCount
+  
   Serial.println(" ");
   Serial.println("*******************  ");
   Serial.print("Storing date to Firebase");
-  //  Serial.print("nextDay: ");
-  //  Serial.println(nextDay);
-  //  Serial.print("currentDay: ");
-  //  Serial.println(currentDay);
   Serial.print("  ********************");
   Serial.print("");
+   // Increment dateCount
   dateCount++;
+
+  // Construct Firebase paths
   String datePath = "/dateData/";
   datePath.concat(String(dateCount)); // Change to dateStoreCount
+ 
   String dayPath = datePath;
   dayPath.concat("/day");
   String monthPath = datePath;
   monthPath.concat("/month");
 
-  bool success = Firebase.RTDB.setInt(&fbdo, dayPath, currentDay) &&
-                 Firebase.RTDB.setInt(&fbdo, monthPath, currentMonth);
   Serial.print("currentMonth: ");
   Serial.println(currentMonth);
   Serial.print("currentDay: ");
   Serial.println(currentDay);
-  // bool success = Firebase.RTDB.setInt(&fbdo, dayPath, currentDay) &&
-  //                Firebase.RTDB.setInt(&fbdo, monthPath, currentMonth);
-
-  if (!success)
-  {
-    Serial.println("Failed to store pending date in Firebase.");
-    Serial.print("Pending Target Day: ");
-    Serial.println(pendingTargetDay);
-    Serial.print("Pending Test Month: ");
-    Serial.println(pendingTestMonth);
-    Serial.print("1119 ******* Failed to store date in Firebase.  ");
-    Serial.println(fbdo.errorReason());
-    connecttoFirebase(); // Attempt to reconnect to Firebase
-    // Mark date storage as pending
-    pendingDateStorage = true;
-    pendingTargetDay = currentDay;
-    pendingTestMonth = currentMonth;
-  }
+  bool success = Firebase.RTDB.setInt(&fbdo, dayPath, currentDay) && Firebase.RTDB.setInt(&fbdo, monthPath, currentMonth);
 
   if (success)
-  {
-    Serial.println("Date successfully stored in Firebase.");
-  }
-  else
-  {
-    Serial.print("1134 ******** Failed to store date in Firebase.  ");
-    Serial.println(fbdo.errorReason());
-    connecttoFirebase(); // Attempt to reconnect to Firebase
-  }
-  //}
-  // else // can be removed
+    {
+        Serial.println("Date successfully stored in Firebase.");
+        pendingDateStorage = false; // Reset pending flag
+    }
+    else
+    {
+        Serial.println("Failed to store date in Firebase.");
+        Serial.print("Error: ");
+        Serial.println(fbdo.errorReason());
+
+        // Mark date storage as pending
+        pendingDateStorage = true;
+        pendingTargetDay = currentDay;
+        pendingTestMonth = currentMonth;
+
+        // Attempt to reconnect to Firebase
+        connecttoFirebase();
+    }
+  // if (!success)
   // {
-  //   Serial.println("nextDay does not match currentDay. Skipping date storage."); // Return true since this is not a failure, just a skip
+  //   Serial.println("Failed to store pending date in Firebase.");
+  //   Serial.print("Pending Target Day: ");
+  //   Serial.println(pendingTargetDay);
+  //   Serial.print("Pending Test Month: ");
+  //   Serial.println(pendingTestMonth);
+  //   Serial.print("1119 ******* Failed to store date in Firebase.  ");
+  //   Serial.println(fbdo.errorReason());
+  //   connecttoFirebase(); // Attempt to reconnect to Firebase
+
+  //   // Mark date storage as pending
+  //   pendingDateStorage = true;
+  //   pendingTargetDay = currentDay;
+  //   pendingTestMonth = currentMonth;
+  // }
+
+  // if (success)
+  // {
+  //   Serial.println("Date successfully stored in Firebase.");
+  // }
+  // else
+  // {
+  //   Serial.print("1134 ******** Failed to store date in Firebase.  ");
+  //   Serial.println(fbdo.errorReason());
+  //   connecttoFirebase(); // Attempt to reconnect to Firebase
   // }
 }
 /************************************
@@ -1528,30 +1540,3 @@ void retrieveDateCount()
     Serial.println(fbdo.errorReason());
   }
 }
-/******************************************
- * Retrieve the dateCount from Firebase  *
- *            end                         *
- ******************************************/
-
-//    /******************************************
-//    * Retrieve the settime from Firebase  *
-//    *            start                       *
-//    ******************************************/
-// void retrieveSetTime()
-// {
-//   if (Firebase.RTDB.getInt(&fbdo, "/setTime"))
-//   {
-//     dateCount = fbdo.intData();
-//     Serial.print("Retrieved dateCount from Firebase: ");
-//     // Serial.println(dateCount);
-//   }
-//   else
-//   {
-//     Serial.println("Failed to retrieve dateCount from Firebase");
-//     Serial.println(fbdo.errorReason());
-//   }
-// }
-//   /******************************************
-//    * Retrieve the setTime from Firebase  *
-//    *            end                         *
-//    ******************************************/
