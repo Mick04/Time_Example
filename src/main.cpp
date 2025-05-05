@@ -1117,25 +1117,25 @@ void storeDataToFirebase()
  ***************************************/
 void retrieveLastStoredData()
 {
-   Serial.println("Retrieving setTime from Firebase...");
-    // Retrieve setTime
+  Serial.println("Retrieving setTime from Firebase...");
+  // Retrieve setTime
   if (Firebase.RTDB.getString(&fbdo, "/setTime/F_B_AMtime"))
   {
     String amTimeStr = fbdo.stringData();
-  if (sscanf(amTimeStr.c_str(), "%d:%d", &amHours, &amMinutes) == 2) // Ensure both values are parsed
-  {
-    Serial.print("Retrieved AMtime: ");
-    Serial.println(amTimeStr);
-    Serial.print("Parsed amHours: ");
-    Serial.println(amHours);
-    Serial.print("Parsed amMinutes: ");
-    Serial.println(amMinutes);
-  }
-  else
-  {
+    if (sscanf(amTimeStr.c_str(), "%d:%d", &amHours, &amMinutes) == 2) // Ensure both values are parsed
+    {
+      Serial.print("Retrieved AMtime: ");
+      Serial.println(amTimeStr);
+      Serial.print("Parsed amHours: ");
+      Serial.println(amHours);
+      Serial.print("Parsed amMinutes: ");
+      Serial.println(amMinutes);
+    }
+    else
+    {
       Serial.println("Failed to parse AMtime.");
+    }
   }
-}
   else
   {
     Serial.println("Failed to retrieve AMtime from Firebase");
@@ -1161,220 +1161,199 @@ void retrieveLastStoredData()
       Serial.println("Failed to parse PMtime.");
     }
   }
-    else
-    {
-      Serial.println("Failed to retrieve PMtime from Firebase");
-      Serial.println(fbdo.errorReason());
-    }
-    // Retrieve amTemperature
-    if (Firebase.RTDB.getInt(&fbdo, "/setTime/F_B_amTemperature"))
-    {
-      amTemperature = fbdo.intData();
-      Serial.print("Retrieved amTemperature: ");
-      Serial.println(amTemperature);
-    }
-    else
-    {
-      Serial.println("Failed to retrieve amTemperature from Firebase");
-      Serial.println(fbdo.errorReason());
-    }
+  else
+  {
+    Serial.println("Failed to retrieve PMtime from Firebase");
+    Serial.println(fbdo.errorReason());
+  }
+  // Retrieve amTemperature
 
-    // Retrieve pmTemperature
-    if (Firebase.RTDB.getInt(&fbdo, "/setTime/F_B_pmTemperature"))
-    {
-      pmTemperature = fbdo.intData();
-      Serial.print("Retrieved pmTemperature: ");
-      Serial.println(pmTemperature);
-    }
-    else
-    {
-      Serial.println("Failed to retrieve pmTemperature from Firebase");
-      Serial.println(fbdo.errorReason());
-    }
-    // Retrieve the last stored data from Firebase
-    Serial.println("*******Retrieving last stored data from Firebase");
-    String path = "/sensorData/";
-    path.concat(String(storeCount));
-    Serial.print("Path: ");
-    Serial.println(path);
-    Serial.print("storeCount: ");
-    Serial.println(storeCount);
-
-    if (Firebase.RTDB.getJSON(&fbdo, path))
-    {
-      FirebaseJson &json = fbdo.jsonObject();
-      String jsonStr;
-      json.toString(jsonStr, true);
-      Serial.println("Retrieved last stored data from Firebase:");
-      Serial.println(jsonStr);
-
-      FirebaseJsonData jsonData;
-      if (json.get(jsonData, "red") && jsonData.type == "int")
-      {
-        redTemp = jsonData.intValue;
-      }
-      if (json.get(jsonData, "green") && jsonData.type == "int")
-      {
-        greenTemp = jsonData.intValue;
-      }
-      if (json.get(jsonData, "blue") && jsonData.type == "int")
-      {
-        blueTemp = jsonData.intValue;
-      }
-
-      Serial.println("************** Extracted redTemp: ");
-      Serial.println(redTemp);
-      Serial.print("Extracted greenTemp: ");
-      Serial.println(greenTemp);
-      Serial.print("Extracted blueTemp: ");
-      Serial.println(blueTemp);
-
-      // Clear the JSON object to free memory
-      json.clear();
-    }
-    else
-    {
-      Serial.println("Failed to retrieve last stored data from Firebase");
-      Serial.println(fbdo.errorReason());
-    }
-
-    // Retrieve dateCount
-    Serial.println("Retrieving dateCount from Firebase...");
-    if (Firebase.RTDB.getInt(&fbdo, "/dateCount"))
-    {
-      dateCount = fbdo.intData();
-      Serial.print("Retrieved dateCount from Firebase: ");
-      Serial.println(dateCount);
-    }
-    else
-    {
-      Serial.println("Failed to retrieve dateCount from Firebase");
-      Serial.println(fbdo.errorReason());
-    }
-
-    // Retrieve storeCount
-    Serial.println("Retrieving dateCount from Firebase...");
-    if (Firebase.RTDB.getInt(&fbdo, "/storeCount"))
-    {
-      storeCount = fbdo.intData();
-      // Serial.print("Retrieved storeCount from Firebase: ");
-      // Serial.println(storeCount);
-    }
-    else
-    {
-      Serial.println("Failed to retrieve storeCount from Firebase");
-      Serial.println(fbdo.errorReason());
-    }
+  if (Firebase.RTDB.getString(&fbdo, "/setTime/F_B_amTemperature"))
+  {
+    amTemperature = fbdo.stringData().toInt();
+    Serial.print("c: ");
+    Serial.println(pmTemperature);
+  }
+  else
+  {
+    Serial.println("Failed to retrieve pmTemperature from Firebase");
+    Serial.println(fbdo.errorReason());
   }
 
-  /***************************************
-   * function to retrieve the last stored*
-   * data from Firebase on startup       *
-   *           end                       *
-   ***************************************/
+  // if (Firebase.RTDB.getInt(&fbdo, "/setTime/F_B_amTemperature"))
+  // {
+  //   amTemperature = fbdo.intData();
+  //   Serial.print("Retrieved amTemperature: ");
+  //   Serial.println(amTemperature);
+  // }
+  // else
+  // {
+  //   Serial.println("Failed to retrieve amTemperature from Firebase");
+  //   Serial.println(fbdo.errorReason());
+  // }
 
-  /***************************************
-   * function to check the memory        *
-   *           start                     *
-   ***************************************/
-  void checkMemory()
+  // Retrieve pmTemperature
+
+  if (Firebase.RTDB.getString(&fbdo, "/setTime/F_B_pmTemperature"))
   {
-    Serial.print("Free heap memory: ");
-    Serial.println(ESP.getFreeHeap());
+    pmTemperature = fbdo.stringData().toInt();
+    Serial.print("Retrieved pmTemperature: ");
+    Serial.println(pmTemperature);
   }
-  /*****************************************
-   * function to check the memory          *
-   *           end                         *
-   *****************************************/
-
-  /************************************
-   *  Attempt to sign up to Firebase  *
-   *          start                   *
-   ***********************************/
-  void connecttoFirebase()
+  else
   {
-    int DatdBaseretryCount = 0;
-    const int maxRetries = 5; // Maximum number of retries
-    while (!Firebase.signUp(&config, &auth, "", ""))
-    {
-      Serial.println("Attempting to sign up to Firebase...");
-      Serial.printf("Firebase sign-up failed: %s\n", config.signer.signupError.message.c_str());
-      Serial.printf("Error code: %d\n", config.signer.signupError.code);
-      Serial.println("Retrying in 30 seconds...");
-      DatdBaseretryCount++;
-      Serial.print("Retry count: ");
-      Serial.println(DatdBaseretryCount);
-      if (DatdBaseretryCount >= maxRetries)
-      {
-        Serial.println("Max retry count reached. Restarting ESP32...");
-        ESP.restart();        // Restart the ESP32 after max retries
-        retrieveStoreCount(); // retrieve the storeCount from Firebase
-        retrieveDateCount();  // retrieve the dateCount from Firebase
-        // retrieveTime();      // retrieve the time from Firebase
-        break; // Exit the loop after max retries
-      }
-      delay(30000); // Wait for 30 seconds before retrying
-    }
-    Serial.println("Firebase sign-up successful. ok");
-    signupOK = true;
-    // set the token status callback
-    config.token_status_callback = tokenStatusCallback;
-
-    // Initialize Firebase
-    Firebase.begin(&config, &auth);
-    Firebase.reconnectWiFi(true);
-
-    // Check if there is pending date storage
-    if (pendingDateStorage)
-    {
-      Serial.println("Retrying pending date storage...");
-      String datePath = "/dateData/";
-      datePath.concat(String(dateCount)); // Change to dateStoreCount
-      String dayPath = datePath;
-      dayPath.concat("/day");
-      String monthPath = datePath;
-      monthPath.concat("/month");
-
-      bool success = Firebase.RTDB.setInt(&fbdo, dayPath, pendingTargetDay) &&
-                     Firebase.RTDB.setInt(&fbdo, monthPath, pendingTestMonth);
-
-      if (success)
-      {
-        Serial.println("Pending date successfully stored in Firebase.");
-        pendingDateStorage = false; // Reset pending flag
-      }
-      else
-      {
-        Serial.println("Failed to store pending date in Firebase.");
-        Serial.println(fbdo.errorReason());
-        pendingDateStorage = true; // Keep pending flag
-      }
-    }
+    Serial.println("Failed to retrieve pmTemperature from Firebase");
+    Serial.println(fbdo.errorReason());
   }
-  /************************************
-   *  Attempt to sign up to Firebase  *
-   *          end                     *
-   ***********************************/
 
-  /************************************
-   *     function to store date       *
-   *          in Firebase             *
-   *           start                  *
-   ***********************************/
+  // if (Firebase.RTDB.getInt(&fbdo, "/setTime/F_B_pmTemperature"))
+  // {
+  //   pmTemperature = fbdo.intData();
+  //   Serial.print("******Retrieved pmTemperature: ");
+  //   Serial.println(pmTemperature);
+  // }
+  // else
+  // {
+  //   Serial.println("Failed to retrieve pmTemperature from Firebase");
+  //   Serial.println(fbdo.errorReason());
+  // }
+  // Retrieve the last stored data from Firebase
+  Serial.println("*******Retrieving last stored data from Firebase");
+  String path = "/sensorData/";
+  path.concat(String(storeCount));
+  Serial.print("Path: ");
+  Serial.println(path);
+  Serial.print("storeCount: ");
+  Serial.println(storeCount);
 
-  void storeDateToFirebase()
+  if (Firebase.RTDB.getJSON(&fbdo, path))
   {
-    // incriment dateStoreCount
-    Serial.println(" ");
-    Serial.println("*******************  ");
-    Serial.print("Storing date to Firebase");
-    //  Serial.print("nextDay: ");
-    //  Serial.println(nextDay);
-    //  Serial.print("currentDay: ");
-    //  Serial.println(currentDay);
-    Serial.print("  ********************");
-    Serial.print("");
-    dateCount++;
+    FirebaseJson &json = fbdo.jsonObject();
+    String jsonStr;
+    json.toString(jsonStr, true);
+    Serial.println("Retrieved last stored data from Firebase:");
+    Serial.println(jsonStr);
+
+    FirebaseJsonData jsonData;
+    if (json.get(jsonData, "red") && jsonData.type == "int")
+    {
+      redTemp = jsonData.intValue;
+    }
+    if (json.get(jsonData, "green") && jsonData.type == "int")
+    {
+      greenTemp = jsonData.intValue;
+    }
+    if (json.get(jsonData, "blue") && jsonData.type == "int")
+    {
+      blueTemp = jsonData.intValue;
+    }
+
+    Serial.println("************** Extracted redTemp: ");
+    Serial.println(redTemp);
+    Serial.print("Extracted greenTemp: ");
+    Serial.println(greenTemp);
+    Serial.print("Extracted blueTemp: ");
+    Serial.println(blueTemp);
+
+    // Clear the JSON object to free memory
+    json.clear();
+  }
+  else
+  {
+    Serial.println("Failed to retrieve last stored data from Firebase");
+    Serial.println(fbdo.errorReason());
+  }
+
+  // Retrieve dateCount
+  Serial.println("Retrieving dateCount from Firebase...");
+  if (Firebase.RTDB.getInt(&fbdo, "/dateCount"))
+  {
+    dateCount = fbdo.intData();
+    Serial.print("Retrieved dateCount from Firebase: ");
+    Serial.println(dateCount);
+  }
+  else
+  {
+    Serial.println("Failed to retrieve dateCount from Firebase");
+    Serial.println(fbdo.errorReason());
+  }
+
+  // Retrieve storeCount
+  Serial.println("Retrieving dateCount from Firebase...");
+  if (Firebase.RTDB.getInt(&fbdo, "/storeCount"))
+  {
+    storeCount = fbdo.intData();
+    // Serial.print("Retrieved storeCount from Firebase: ");
+    // Serial.println(storeCount);
+  }
+  else
+  {
+    Serial.println("Failed to retrieve storeCount from Firebase");
+    Serial.println(fbdo.errorReason());
+  }
+}
+
+/***************************************
+ * function to retrieve the last stored*
+ * data from Firebase on startup       *
+ *           end                       *
+ ***************************************/
+
+/***************************************
+ * function to check the memory        *
+ *           start                     *
+ ***************************************/
+void checkMemory()
+{
+  Serial.print("Free heap memory: ");
+  Serial.println(ESP.getFreeHeap());
+}
+/*****************************************
+ * function to check the memory          *
+ *           end                         *
+ *****************************************/
+
+/************************************
+ *  Attempt to sign up to Firebase  *
+ *          start                   *
+ ***********************************/
+void connecttoFirebase()
+{
+  int DatdBaseretryCount = 0;
+  const int maxRetries = 5; // Maximum number of retries
+  while (!Firebase.signUp(&config, &auth, "", ""))
+  {
+    Serial.println("Attempting to sign up to Firebase...");
+    Serial.printf("Firebase sign-up failed: %s\n", config.signer.signupError.message.c_str());
+    Serial.printf("Error code: %d\n", config.signer.signupError.code);
+    Serial.println("Retrying in 30 seconds...");
+    DatdBaseretryCount++;
+    Serial.print("Retry count: ");
+    Serial.println(DatdBaseretryCount);
+    if (DatdBaseretryCount >= maxRetries)
+    {
+      Serial.println("Max retry count reached. Restarting ESP32...");
+      ESP.restart();        // Restart the ESP32 after max retries
+      retrieveStoreCount(); // retrieve the storeCount from Firebase
+      retrieveDateCount();  // retrieve the dateCount from Firebase
+      // retrieveTime();      // retrieve the time from Firebase
+      break; // Exit the loop after max retries
+    }
+    delay(30000); // Wait for 30 seconds before retrying
+  }
+  Serial.println("Firebase sign-up successful. ok");
+  signupOK = true;
+  // set the token status callback
+  config.token_status_callback = tokenStatusCallback;
+
+  // Initialize Firebase
+  Firebase.begin(&config, &auth);
+  Firebase.reconnectWiFi(true);
+
+  // Check if there is pending date storage
+  if (pendingDateStorage)
+  {
+    Serial.println("Retrying pending date storage...");
     String datePath = "/dateData/";
     datePath.concat(String(dateCount)); // Change to dateStoreCount
     String dayPath = datePath;
@@ -1382,150 +1361,197 @@ void retrieveLastStoredData()
     String monthPath = datePath;
     monthPath.concat("/month");
 
-    bool success = Firebase.RTDB.setInt(&fbdo, dayPath, currentDay) &&
-                   Firebase.RTDB.setInt(&fbdo, monthPath, currentMonth);
-    Serial.print("currentMonth: ");
-    Serial.println(currentMonth);
-    Serial.print("currentDay: ");
-    Serial.println(currentDay);
-    // bool success = Firebase.RTDB.setInt(&fbdo, dayPath, currentDay) &&
-    //                Firebase.RTDB.setInt(&fbdo, monthPath, currentMonth);
-
-    if (!success)
-    {
-      Serial.println("Failed to store pending date in Firebase.");
-      Serial.print("Pending Target Day: ");
-      Serial.println(pendingTargetDay);
-      Serial.print("Pending Test Month: ");
-      Serial.println(pendingTestMonth);
-      Serial.print("1119 ******* Failed to store date in Firebase.  ");
-      Serial.println(fbdo.errorReason());
-      connecttoFirebase(); // Attempt to reconnect to Firebase
-      // Mark date storage as pending
-      pendingDateStorage = true;
-      pendingTargetDay = currentDay;
-      pendingTestMonth = currentMonth;
-    }
+    bool success = Firebase.RTDB.setInt(&fbdo, dayPath, pendingTargetDay) &&
+                   Firebase.RTDB.setInt(&fbdo, monthPath, pendingTestMonth);
 
     if (success)
     {
-      Serial.println("Date successfully stored in Firebase.");
+      Serial.println("Pending date successfully stored in Firebase.");
+      pendingDateStorage = false; // Reset pending flag
     }
     else
     {
-      Serial.print("1134 ******** Failed to store date in Firebase.  ");
+      Serial.println("Failed to store pending date in Firebase.");
       Serial.println(fbdo.errorReason());
-      connecttoFirebase(); // Attempt to reconnect to Firebase
+      pendingDateStorage = true; // Keep pending flag
     }
-    //}
-    // else // can be removed
-    // {
-    //   Serial.println("nextDay does not match currentDay. Skipping date storage."); // Return true since this is not a failure, just a skip
+  }
+}
+/************************************
+ *  Attempt to sign up to Firebase  *
+ *          end                     *
+ ***********************************/
+
+/************************************
+ *     function to store date       *
+ *          in Firebase             *
+ *           start                  *
+ ***********************************/
+
+void storeDateToFirebase()
+{
+  // incriment dateStoreCount
+  Serial.println(" ");
+  Serial.println("*******************  ");
+  Serial.print("Storing date to Firebase");
+  //  Serial.print("nextDay: ");
+  //  Serial.println(nextDay);
+  //  Serial.print("currentDay: ");
+  //  Serial.println(currentDay);
+  Serial.print("  ********************");
+  Serial.print("");
+  dateCount++;
+  String datePath = "/dateData/";
+  datePath.concat(String(dateCount)); // Change to dateStoreCount
+  String dayPath = datePath;
+  dayPath.concat("/day");
+  String monthPath = datePath;
+  monthPath.concat("/month");
+
+  bool success = Firebase.RTDB.setInt(&fbdo, dayPath, currentDay) &&
+                 Firebase.RTDB.setInt(&fbdo, monthPath, currentMonth);
+  Serial.print("currentMonth: ");
+  Serial.println(currentMonth);
+  Serial.print("currentDay: ");
+  Serial.println(currentDay);
+  // bool success = Firebase.RTDB.setInt(&fbdo, dayPath, currentDay) &&
+  //                Firebase.RTDB.setInt(&fbdo, monthPath, currentMonth);
+
+  if (!success)
+  {
+    Serial.println("Failed to store pending date in Firebase.");
+    Serial.print("Pending Target Day: ");
+    Serial.println(pendingTargetDay);
+    Serial.print("Pending Test Month: ");
+    Serial.println(pendingTestMonth);
+    Serial.print("1119 ******* Failed to store date in Firebase.  ");
+    Serial.println(fbdo.errorReason());
+    connecttoFirebase(); // Attempt to reconnect to Firebase
+    // Mark date storage as pending
+    pendingDateStorage = true;
+    pendingTargetDay = currentDay;
+    pendingTestMonth = currentMonth;
+  }
+
+  if (success)
+  {
+    Serial.println("Date successfully stored in Firebase.");
+  }
+  else
+  {
+    Serial.print("1134 ******** Failed to store date in Firebase.  ");
+    Serial.println(fbdo.errorReason());
+    connecttoFirebase(); // Attempt to reconnect to Firebase
+  }
+  //}
+  // else // can be removed
+  // {
+  //   Serial.println("nextDay does not match currentDay. Skipping date storage."); // Return true since this is not a failure, just a skip
+  // }
+}
+/************************************
+ *     function to store date       *
+ *          in Firebase             *
+ *           end                    *
+ ***********************************/
+
+/*************************************************************
+                           Relay Control
+                                start
+*************************************************************/
+
+void relay_Control()
+{
+  int targetTemp = AmFlag ? amTemp : pmTemp;
+  if (redTemp < targetTemp)
+  {
+    digitalWrite(Relay_Pin, HIGH);
+    digitalWrite(LED_Pin, HIGH);    // LED_Pin on
+    digitalWrite(LED_BUILTIN, LOW); // LED_Pin on
+    heaterStatus = true;
+    // if (!heaterOn) {
+    //   startHeaterTimer();
     // }
   }
-  /************************************
-   *     function to store date       *
-   *          in Firebase             *
-   *           end                    *
-   ***********************************/
-
-  /*************************************************************
-                             Relay Control
-                                  start
- *************************************************************/
-
-  void relay_Control()
+  else if (redTemp > targetTemp)
   {
-    int targetTemp = AmFlag ? amTemp : pmTemp;
-    if (redTemp < targetTemp)
-    {
-      digitalWrite(Relay_Pin, HIGH);
-      digitalWrite(LED_Pin, HIGH);    // LED_Pin on
-      digitalWrite(LED_BUILTIN, LOW); // LED_Pin on
-      heaterStatus = true;
-      // if (!heaterOn) {
-      //   startHeaterTimer();
-      // }
-    }
-    else if (redTemp > targetTemp)
-    {
-      digitalWrite(Relay_Pin, LOW);
-      digitalWrite(LED_Pin, LOW);      // LED_Pin off
-      digitalWrite(LED_BUILTIN, HIGH); // LED_Pin off
-      heaterStatus = false;
-      // heaterOn = false;
-    }
+    digitalWrite(Relay_Pin, LOW);
+    digitalWrite(LED_Pin, LOW);      // LED_Pin off
+    digitalWrite(LED_BUILTIN, HIGH); // LED_Pin off
+    heaterStatus = false;
+    // heaterOn = false;
   }
-  /*************************************************************
-                              Relay Control
-                                   End
-  *************************************************************/
+}
+/*************************************************************
+                            Relay Control
+                                 End
+*************************************************************/
 
-  /******************************************
-   * Retrieve the storeCount from Firebase  *
-   *            start                       *
-   ******************************************/
-  void retrieveStoreCount()
+/******************************************
+ * Retrieve the storeCount from Firebase  *
+ *            start                       *
+ ******************************************/
+void retrieveStoreCount()
+{
+  if (Firebase.RTDB.getInt(&fbdo, "/storeCount"))
   {
-    if (Firebase.RTDB.getInt(&fbdo, "/storeCount"))
-    {
-      storeCount = fbdo.intData();
-      Serial.print("Retrieved storeCount from Firebase: ");
-      // Serial.println(storeCount);
-    }
-    else
-    {
-      Serial.println("Failed to retrieve storeCount from Firebase");
-      Serial.println(fbdo.errorReason());
-    }
+    storeCount = fbdo.intData();
+    Serial.print("Retrieved storeCount from Firebase: ");
+    // Serial.println(storeCount);
   }
-  /******************************************
-   * Retrieve the storeCount from Firebase  *
-   *            end                         *
-   ******************************************/
-
-  /******************************************
-   * Retrieve the dateCount from Firebase  *
-   *            start                       *
-   ******************************************/
-  void retrieveDateCount()
+  else
   {
-    if (Firebase.RTDB.getInt(&fbdo, "/dateCount"))
-    {
-      dateCount = fbdo.intData();
-      Serial.print("Retrieved dateCount from Firebase: ");
-      // Serial.println(dateCount);
-    }
-    else
-    {
-      Serial.println("Failed to retrieve dateCount from Firebase");
-      Serial.println(fbdo.errorReason());
-    }
+    Serial.println("Failed to retrieve storeCount from Firebase");
+    Serial.println(fbdo.errorReason());
   }
-  /******************************************
-   * Retrieve the dateCount from Firebase  *
-   *            end                         *
-   ******************************************/
+}
+/******************************************
+ * Retrieve the storeCount from Firebase  *
+ *            end                         *
+ ******************************************/
 
-  //    /******************************************
-  //    * Retrieve the settime from Firebase  *
-  //    *            start                       *
-  //    ******************************************/
-  // void retrieveSetTime()
-  // {
-  //   if (Firebase.RTDB.getInt(&fbdo, "/setTime"))
-  //   {
-  //     dateCount = fbdo.intData();
-  //     Serial.print("Retrieved dateCount from Firebase: ");
-  //     // Serial.println(dateCount);
-  //   }
-  //   else
-  //   {
-  //     Serial.println("Failed to retrieve dateCount from Firebase");
-  //     Serial.println(fbdo.errorReason());
-  //   }
-  // }
-  //   /******************************************
-  //    * Retrieve the setTime from Firebase  *
-  //    *            end                         *
-  //    ******************************************/
+/******************************************
+ * Retrieve the dateCount from Firebase  *
+ *            start                       *
+ ******************************************/
+void retrieveDateCount()
+{
+  if (Firebase.RTDB.getInt(&fbdo, "/dateCount"))
+  {
+    dateCount = fbdo.intData();
+    Serial.print("Retrieved dateCount from Firebase: ");
+    // Serial.println(dateCount);
+  }
+  else
+  {
+    Serial.println("Failed to retrieve dateCount from Firebase");
+    Serial.println(fbdo.errorReason());
+  }
+}
+/******************************************
+ * Retrieve the dateCount from Firebase  *
+ *            end                         *
+ ******************************************/
+
+//    /******************************************
+//    * Retrieve the settime from Firebase  *
+//    *            start                       *
+//    ******************************************/
+// void retrieveSetTime()
+// {
+//   if (Firebase.RTDB.getInt(&fbdo, "/setTime"))
+//   {
+//     dateCount = fbdo.intData();
+//     Serial.print("Retrieved dateCount from Firebase: ");
+//     // Serial.println(dateCount);
+//   }
+//   else
+//   {
+//     Serial.println("Failed to retrieve dateCount from Firebase");
+//     Serial.println(fbdo.errorReason());
+//   }
+// }
+//   /******************************************
+//    * Retrieve the setTime from Firebase  *
+//    *            end                         *
+//    ******************************************/
