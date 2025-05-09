@@ -67,6 +67,7 @@ void tokenStatusCallback(TokenInfo info);
 void relay_Control();
 void retrieveStoreCount();
 void retrieveDateCount();
+void setTargetTemperature();
 // void retrieveTime();
 /*****************************
  *     Function Prototypes    *
@@ -151,7 +152,7 @@ int currentMonth = 1;
 int nextDay = 1; // Set to 2 for testing
 // timeCount is for testing only
 int timeCount = 0;
-
+int asBeenSaved = false;
 uint_fast8_t amTemperature; // is set by the sliders
 uint_fast8_t pmTemperature; // is set by the sliders
 uint_fast8_t amTemp = 0;    // is set by the sliders
@@ -185,6 +186,8 @@ bool firstrun = true;
 bool pendingDateStorage = false; // Flag to track if date storage is pending
 int pendingTargetDay = 0;        // Store the target day for retry
 int pendingTestMonth = 0;        // Store the test month for retry
+
+char sensVal[50];
 /*************************
  *   global Variables   *
  *       end             *
@@ -373,22 +376,23 @@ void setup()
 
 void loop()
 {
-  Serial.println("********** AmTemperature************: ");
-  Serial.println(amTemperature);
-  Serial.println("********** pmTemperature************: ");
-  Serial.println(pmTemperature);
-  Serial.println("********** amTime************: ");
-  Serial.print(amHours);
-  Serial.print(": ");
-  Serial.println(amMinutes);
-  Serial.println("********** pmTime************: ");
-  Serial.println(pmHours);
-  Serial.print(": ");
-  Serial.println(pmMinutes);
+  // Serial.println("********** AmTemperature************: ");
+  // Serial.println(amTemperature);
+  // Serial.println("********** pmTemperature************: ");
+  // Serial.println(pmTemperature);
+  // Serial.println("********** amTime************: ");
+  // Serial.print(amHours);
+  // Serial.print(": ");
+  // Serial.println(amMinutes);
+  // Serial.println("********** pmTime************: ");
+  // Serial.println(pmHours);
+  // Serial.print(": ");
+  // Serial.println(pmMinutes);
   getTime(); // call the function to get the time
   // publishTimeToMQTT();
   // storeDateToFirebase();
   upDateSensors();
+  setTargetTemperature();
   // Serial.println("...");
   // Serial.print("352 targetMinutes: ");
   // Serial.print(targetMinutes);
@@ -448,10 +452,10 @@ void loop()
     digitalWrite(LED_BUILTIN, LOW);
     reconnect();
   }
-  long rssi = WiFi.RSSI();
-  Serial.print("RSSI: ");
-  Serial.print(rssi);
-  Serial.println(" dBm");
+  // long rssi = WiFi.RSSI();
+  // Serial.print("RSSI: ");
+  // Serial.print(rssi);
+  // Serial.println(" dBm");
   /***************************************
    * Check if the client is connected    *
    *       to the MQTT broker            *
@@ -536,48 +540,49 @@ void getTime()
   delay(1000);
 
   timeCount++;
-  Serial.println("Before currentDay == nextDay");
-  Serial.println("..... ");
-  Serial.print("currentDay: ");
-  Serial.println(currentDay);
-  Serial.print("nextDay: ");
-  Serial.println(nextDay);
-  Serial.print("currentMonth: ");
-  Serial.println(currentMonth);
-  Serial.print("timeCount: ");
-  Serial.println(timeCount);
-  Serial.println(("..... "));
-  if (timeCount == 10)
+  // Serial.println("Before currentDay == nextDay");
+  // Serial.println("..... ");
+  // Serial.print("currentDay: ");
+  // Serial.println(currentDay);
+  // Serial.print("nextDay: ");
+  // Serial.println(nextDay);
+  // Serial.print("currentMonth: ");
+  // Serial.println(currentMonth);
+  // Serial.print("timeCount: ");
+  // Serial.println(timeCount);
+  // Serial.println(("..... "));
+  if (timeCount == 1000)
   {
     timeCount = 0;
     currentDay++; // Increment currentDay for testing
+    asBeenSaved = false;
   }
-  int asBeenSaved = false;
+  
   // Check if nextDay matches currentDay
-  Serial.println("Checking if nextDay matches currentDay");
-  Serial.println("..... ");
-  Serial.print("currentDay: ");
-  Serial.println(currentDay);
-  Serial.print("nextDay: ");
-  Serial.println(nextDay);
-  Serial.print("currentMonth: ");
-  Serial.println(currentMonth);
-  Serial.print("timeCount: ");
-  Serial.println(timeCount);
-  Serial.println(("..... "));
+  // Serial.println("Checking if nextDay matches currentDay");
+  // Serial.println("..... ");
+  // Serial.print("currentDay: ");
+  // Serial.println(currentDay);
+  // Serial.print("nextDay: ");
+  // Serial.println(nextDay);
+  // Serial.print("currentMonth: ");
+  // Serial.println(currentMonth);
+  // Serial.print("timeCount: ");
+  // Serial.println(timeCount);
+  // Serial.println(("..... "));
   if (currentDay == nextDay)
   {
-    Serial.println("nextDay matches currentDay, incrementing dateCount");
-    Serial.println("..... ");
-    Serial.print("currentDay: ");
-    Serial.println(currentDay);
-    Serial.print("nextDay: ");
-    Serial.println(nextDay);
-    Serial.print("currentMonth: ");
-    Serial.println(currentMonth);
-    Serial.print("timeCount: ");
-    Serial.println(timeCount);
-    Serial.println(("..... "));
+    // Serial.println("nextDay matches currentDay, incrementing dateCount");
+    // Serial.println("..... ");
+    // Serial.print("currentDay: ");
+    // Serial.println(currentDay);
+    // Serial.print("nextDay: ");
+    // Serial.println(nextDay);
+    // Serial.print("currentMonth: ");
+    // Serial.println(currentMonth);
+    // Serial.print("timeCount: ");
+    // Serial.println(timeCount);
+    // Serial.println(("..... "));
     // Check if nextDay exceeds the maximum possible days in the current month
     if (currentMonth == 2) // February
     {
@@ -587,6 +592,7 @@ void getTime()
       {
         if (currentDay > 28)
         {
+          Serial.println("line 594");
           publishTimeToMQTT();
           storeDateToFirebase();
           asBeenSaved = true;
@@ -599,6 +605,7 @@ void getTime()
       {
         if (currentDay > 27)
         {
+          Serial.println("line 607");
           publishTimeToMQTT();
           storeDateToFirebase();
           asBeenSaved = true;
@@ -614,6 +621,7 @@ void getTime()
       if (currentDay > 29)
       {
         Serial.println("April, June, September, November");
+        Serial.println("line 623");
         publishTimeToMQTT();
         storeDateToFirebase();
         asBeenSaved = true;
@@ -627,6 +635,7 @@ void getTime()
       if (currentDay > 30)
       {
         Serial.println("All other months have 31 days");
+        Serial.println("line 637");
         publishTimeToMQTT();
         storeDateToFirebase();
         asBeenSaved = true;
@@ -647,7 +656,9 @@ void getTime()
       // Store the date in Firebase
       storeDateToFirebase();
       // Publish the time to MQTT
+      Serial.println("line 658");
       publishTimeToMQTT();
+      asBeenSaved = true;
     }
     // Increment nextDay for the next iteration
     nextDay++;
@@ -680,10 +691,10 @@ void callback(char *topic, byte *payload, unsigned int length)
   if (String(topic) == storeCount_topic)
   {
     storeCount = message.toInt(); // Convert the message to an integer and update storeCount
-    Serial.print("......");
-    Serial.print("Updated storeCount: ");
-    Serial.println(storeCount);
-    Serial.print("....... ");
+    // Serial.print("......");
+    // Serial.print("Updated storeCount: ");
+    // Serial.println(storeCount);
+    // Serial.print("....... ");
   }
   payload[length] = '\0';
 
@@ -703,7 +714,7 @@ void callback(char *topic, byte *payload, unsigned int length)
   {
     sscanf((char *)payload, "%d", &pmTemperature);
     Serial.print("......");
-    Serial.print("pmTemperature: ");
+    Serial.print("line 706 pmTemperature: ");
     Serial.println(pmTemperature);
     Serial.print("......");
     if (StartUp == 1)
@@ -716,7 +727,7 @@ void callback(char *topic, byte *payload, unsigned int length)
   {
     sscanf((char *)payload, "%d:%d", &amHours, &amMinutes);
     Serial.print("......");
-    Serial.print("amHours: ");
+    Serial.print("line 719 amHours: ");
     Serial.println(amHours);
     Serial.print("......");
   }
@@ -820,17 +831,17 @@ void publishTimeToMQTT()
   // Serial.println("Publishing temperature end: ");
 
   client.publish(time_topic, timeStr, true);
-  Serial.print("Publishing time: ");
-  Serial.println(timeStr);
+  // Serial.print("Publishing time: ");
+  // Serial.println(timeStr);
   // Publish hour and minute values
   client.publish(hour_topic, hourStr.c_str());
-  Serial.print("hour; ");
-  Serial.printf(hour_topic, hourStr.c_str());
-  Serial.println("");
+  // Serial.print("hour; ");
+  // Serial.printf(hour_topic, hourStr.c_str());
+  // Serial.println("");
   client.publish(minute_topic, minuteStr.c_str());
-  Serial.print("minuteStr; ");
-  Serial.printf(minute_topic, minuteStr.c_str());
-  Serial.println("");
+  // Serial.print("minuteStr; ");
+  // Serial.printf(minute_topic, minuteStr.c_str());
+  // Serial.println("");
 }
 /***************************************
  *   function to publish time to MQTT  *
@@ -850,24 +861,24 @@ void publishSensorValues()
   String storeCountStr = String(storeCount);
 
   client.publish(red_topic, redStr.c_str());
-  Serial.print("redStr; ");
-  Serial.printf(red_topic, redStr.c_str());
-  Serial.println("");
+  // Serial.print("redStr; ");
+  // Serial.printf(red_topic, redStr.c_str());
+  // Serial.println("");
 
   client.publish(green_topic, greenStr.c_str());
-  Serial.print("greenStr; ");
-  Serial.printf(green_topic, greenStr.c_str());
-  Serial.println("");
+  // Serial.print("greenStr; ");
+  // Serial.printf(green_topic, greenStr.c_str());
+  // Serial.println("");
 
   client.publish(blue_topic, blueStr.c_str());
-  Serial.print("blueStr; ");
-  Serial.printf(blue_topic, blueStr.c_str());
-  Serial.println("");
+  // Serial.print("blueStr; ");
+  // Serial.printf(blue_topic, blueStr.c_str());
+  // Serial.println("");
 
   client.publish(storeCount_topic, storeCountStr.c_str());
-  Serial.print("storeCountStr; ");
-  Serial.printf(storeCount_topic, storeCountStr.c_str());
-  Serial.println("");
+  // Serial.print("storeCountStr; ");
+  // Serial.printf(storeCount_topic, storeCountStr.c_str());
+  // Serial.println("");
 
   // add publish for hour and minute
 
@@ -879,103 +890,6 @@ void publishSensorValues()
  *      and publish the temperature    *
  *           and storeCount            *
  *               end                   *
- ***************************************/
-
-/***************************************
- *  function to update the sensors    *
- *           start                     *
- ***************************************/
-
-void upDateSensors()
-{
-  char sensVal[50];
-  // Serial.print("Requesting temperatures...");
-  sensors.requestTemperatures();
-  // Serial.println("DONE");
-
-  redTemp = static_cast<int>(sensors.getTempC(red));     // get the temperature for the red sensor
-  greenTemp = static_cast<int>(sensors.getTempC(green)); // get the temperature for the green sensor
-  blueTemp = static_cast<int>(sensors.getTempC(blue));   //  get the temperature for the blue sensor
-  Serial.print("...");
-  Serial.print("...");
-  Serial.print("Red temperature: ");
-  Serial.print(redTemp);
-  Serial.println(" C");
-  Serial.print("Green temperature: ");
-  Serial.print(greenTemp);
-  Serial.println(" C");
-  Serial.print("Blue temperature: ");
-  Serial.print(blueTemp);
-  Serial.println(" C");
-  Serial.println("...");
-  Serial.println("...");
-  /*********************************************
-   *   Print the temperature readings to the   *
-   *   serial monitor for debugging purposes   *
-   *                  start                    *
-   * ******************************************/
-
-  // Serial.print("storeCount: ");
-  // Serial.println(storeCount);
-  /*********************************************
-   *  Print the temperature readings to the   *
-   * serial monitor for debugging purposes    *
-   *                 end                      *
-   * ******************************************/
-
-  /*********************************************
-   * Check if the temperature readings have    *
-   * changed and publish to MQTT and store     *
-   * to Firebase if they have changed          *
-   *                 start                     *
-   * ******************************************/
-  if (redTemp != prevRedTemp || greenTemp != prevGreenTemp || blueTemp != prevBlueTemp)
-  {
-    Serial.println("...");
-    Serial.println("Temperature change detected, publishing to MQTT...");
-    Serial.println("...");
-    publishSensorValues();
-    storeDataToFirebase();
-    prevRedTemp = redTemp;
-    prevGreenTemp = greenTemp;
-    prevBlueTemp = blueTemp;
-    // client.publish("wemos/status", "online", true);
-    /*************************************************************
-                              Heater Control
-                                   start
-  ************************************************************/
-    if (Am)
-    {
-      if (amHours == Hours && amMinutes == Minutes)
-      { // set amTemp for the Night time setting
-        AmFlag = true;
-        amTemp = amTemperature;
-        int myTemp = amTemp;
-        sprintf(sensVal, "%d", myTemp);
-        client.publish("targetTemperature", sensVal, true);
-      }
-    }
-    else
-    {
-      if (pmHours == Hours && pmMinutes == Minutes)
-      { // set pmTemp for the Night time setting
-        AmFlag = false;
-        pmTemp = pmTemperature;
-        int myTemp = pmTemp;
-        sprintf(sensVal, "%d", myTemp);
-        client.publish("targetTemperature", sensVal, true);
-      }
-    }
-  }
-  /*************************************************************
-                               Heater Control
-                                      End
-   *************************************************************/
-}
-
-/***************************************
- *  function to update the sensors     *
- *           end                       *
  ***************************************/
 
 /***************************************
@@ -1221,10 +1135,10 @@ void retrieveLastStoredData()
   Serial.println("*******Retrieving last stored data from Firebase");
   String path = "/sensorData/";
   path.concat(String(storeCount));
-  Serial.print("Path: ");
-  Serial.println(path);
-  Serial.print("storeCount: ");
-  Serial.println(storeCount);
+  // Serial.print("Path: ");
+  // Serial.println(path);
+  // Serial.print("storeCount: ");
+  // Serial.println(storeCount);
 
   if (Firebase.RTDB.getJSON(&fbdo, path))
   {
@@ -1408,10 +1322,10 @@ void storeDateToFirebase()
   String monthPath = datePath;
   monthPath.concat("/month");
 
-  Serial.print("currentMonth: ");
-  Serial.println(currentMonth);
-  Serial.print("currentDay: ");
-  Serial.println(currentDay);
+  // Serial.print("currentMonth: ");
+  // Serial.println(currentMonth);
+  // Serial.print("currentDay: ");
+  // Serial.println(currentDay);
   bool success = Firebase.RTDB.setInt(&fbdo, dayPath, currentDay) && Firebase.RTDB.setInt(&fbdo, monthPath, currentMonth);
 
   if (success)
@@ -1467,38 +1381,6 @@ void storeDateToFirebase()
  *           end                    *
  ***********************************/
 
-/*************************************************************
-                           Relay Control
-                                start
-*************************************************************/
-
-void relay_Control()
-{
-  int targetTemp = AmFlag ? amTemp : pmTemp;
-  if (redTemp < targetTemp)
-  {
-    digitalWrite(Relay_Pin, HIGH);
-    digitalWrite(LED_Pin, HIGH);    // LED_Pin on
-    digitalWrite(LED_BUILTIN, LOW); // LED_Pin on
-    heaterStatus = true;
-    // if (!heaterOn) {
-    //   startHeaterTimer();
-    // }
-  }
-  else if (redTemp > targetTemp)
-  {
-    digitalWrite(Relay_Pin, LOW);
-    digitalWrite(LED_Pin, LOW);      // LED_Pin off
-    digitalWrite(LED_BUILTIN, HIGH); // LED_Pin off
-    heaterStatus = false;
-    // heaterOn = false;
-  }
-}
-/*************************************************************
-                            Relay Control
-                                 End
-*************************************************************/
-
 /******************************************
  * Retrieve the storeCount from Firebase  *
  *            start                       *
@@ -1540,3 +1422,153 @@ void retrieveDateCount()
     Serial.println(fbdo.errorReason());
   }
 }
+
+/***************************************
+ *  function to update the sensors    *
+ *           start                     *
+ ***************************************/
+
+ void upDateSensors()
+ {
+   // Serial.print("Requesting temperatures...");
+   sensors.requestTemperatures();
+   // Serial.println("DONE");
+ 
+   redTemp = static_cast<int>(sensors.getTempC(red));     // get the temperature for the red sensor
+   greenTemp = static_cast<int>(sensors.getTempC(green)); // get the temperature for the green sensor
+   blueTemp = static_cast<int>(sensors.getTempC(blue));   //  get the temperature for the blue sensor
+   // Serial.print("...");
+   // Serial.print("...");
+   // Serial.print("Red temperature: ");
+   // Serial.print(redTemp);
+   // Serial.println(" C");
+   // Serial.print("Green temperature: ");
+   // Serial.print(greenTemp);
+   // Serial.println(" C");
+   // Serial.print("Blue temperature: ");
+   // Serial.print(blueTemp);
+   // Serial.println(" C");
+   // Serial.println("...");
+   // Serial.println("...");
+   /*********************************************
+    *   Print the temperature readings to the   *
+    *   serial monitor for debugging purposes   *
+    *                  start                    *
+    * ******************************************/
+ 
+   // Serial.print("storeCount: ");
+   // Serial.println(storeCount);
+   /*********************************************
+    *  Print the temperature readings to the   *
+    * serial monitor for debugging purposes    *
+    *                 end                      *
+    * ******************************************/
+ 
+   /*********************************************
+    * Check if the temperature readings have    *
+    * changed and publish to MQTT and store     *
+    * to Firebase if they have changed          *
+    *                 start                     *
+    * ******************************************/
+   if (redTemp != prevRedTemp || greenTemp != prevGreenTemp || blueTemp != prevBlueTemp)
+   {
+     Serial.println("...");
+     Serial.print("amHours...");
+     Serial.print(amHours);
+     Serial.print("....amMinutes...");
+     Serial.println(amMinutes);
+     Serial.print("Hours...");
+     Serial.print(Hours);
+     Serial.print("...Minutes...");
+     Serial.println(Minutes);
+     Serial.print("pmHours...");
+     Serial.print(pmHours);
+     Serial.print("...pmMinutes...");
+     Serial.println(pmMinutes);
+     Serial.print("Hours...");
+     Serial.print(Hours);
+     Serial.print("...Minutes...");
+     Serial.println(Minutes);
+     Serial.println("...");
+     Serial.println("Temperature change detected, publishing to MQTT...");
+     publishSensorValues();
+     storeDataToFirebase();
+     prevRedTemp = redTemp;
+     prevGreenTemp = greenTemp;
+     prevBlueTemp = blueTemp;
+     // client.publish("wemos/status", "online", true);
+ }
+}
+ /***************************************
+  *  function to update the sensors     *
+  *           end                       *
+  ***************************************/
+ 
+/*************************************************************
+                           Relay Control
+                                start
+*************************************************************/
+
+void relay_Control()
+{
+  int targetTemp = AmFlag ? amTemp : pmTemp;
+  if (redTemp < targetTemp)
+  {
+    digitalWrite(Relay_Pin, HIGH);
+    digitalWrite(LED_Pin, HIGH);    // LED_Pin on
+    digitalWrite(LED_BUILTIN, LOW); // LED_Pin on
+    heaterStatus = true;
+    // if (!heaterOn) {
+    //   startHeaterTimer();
+    // }
+  }
+  else if (redTemp > targetTemp)
+  {
+    digitalWrite(Relay_Pin, LOW);
+    digitalWrite(LED_Pin, LOW);      // LED_Pin off
+    digitalWrite(LED_BUILTIN, HIGH); // LED_Pin off
+    heaterStatus = false;
+    // heaterOn = false;
+  }
+}
+/*************************************************************
+                            Relay Control
+                                 End
+*************************************************************/
+
+ /*************************************************************
+                               Heater Control
+                                    start
+   ************************************************************/
+  void setTargetTemperature(){
+
+  if (Am)
+  {
+    if (amHours == Hours && amMinutes == Minutes)
+    { // set amTemp for the Night time setting
+     Serial.println("amHours == Hours && amMinutes == Minutes");
+      // Serial.println("amHours == Hours && amMinutes == Minutes");
+      AmFlag = true;
+      amTemp = amTemperature;
+      int myTemp = amTemp;
+      sprintf(sensVal, "%d", myTemp);
+      client.publish("targetTemperature", sensVal, true);
+    }
+  }
+  else
+  {
+    if (pmHours == Hours && pmMinutes == Minutes)
+    { // set pmTemp for the Night time setting
+      Serial.println("pmHours == Hours && PmMinutes == Minutes");
+      AmFlag = false;
+      pmTemp = pmTemperature;
+      int myTemp = pmTemp;
+      sprintf(sensVal, "%d", myTemp);
+      client.publish("targetTemperature", sensVal, true);
+    }
+  }
+}
+/*************************************************************
+                             Heater Control
+                                    End
+ *************************************************************/
