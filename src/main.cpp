@@ -1567,9 +1567,9 @@ void retrieveDateCount()
 void relay_Control()
 {
   Serial.println("...");
-  Serial.println("**********************************");
+  Serial.println("###################################");
   Serial.println("***** relat_Control **************");  
-  Serial.println("**********************************"); 
+  Serial.println("###################################"); 
   Serial.println("...");
   int targetTemp = AmFlag ? amTemp : pmTemp;
   if (redTemp < targetTemp)
