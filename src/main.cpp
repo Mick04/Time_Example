@@ -61,7 +61,7 @@ void upDateSensors();
 void checkMemory();
 void retrieveLastStoredData();
 void storeDataToFirebase();
-void connecttoFirebase();
+void connectToFirebase();
 void storeDateToFirebase();
 void tokenStatusCallback(TokenInfo info);
 void relay_Control();
@@ -296,7 +296,7 @@ void setup()
   config.database_url = DATABASE_URL;    // set the database URL
   config.timeout.serverResponse = 15000; // Set server response timeout to 10 seconds
 
-  connecttoFirebase(); // call the function to connect to Firebase
+  connectToFirebase(); // call the function to connect to Firebase
 
   timeClient.begin();  // start the timeClient
   timeClient.update(); // update the timeClient
@@ -393,6 +393,7 @@ void loop()
   // storeDateToFirebase();
   upDateSensors();
   setTargetTemperature();
+  relay_Control();
   // Serial.println("...");
   // Serial.print("352 targetMinutes: ");
   // Serial.print(targetMinutes);
@@ -523,6 +524,11 @@ void ConnectToWiFi()
  ***************************************/
 void getTime()
 {
+  Serial.println("...");
+  Serial.println("**********************************");
+  Serial.println("********** getTime ***************");  
+  Serial.println("**********************************"); 
+  Serial.println("..."); 
   timeClient.update();
   time_t epochTime = timeClient.getEpochTime();
   // currrentDay and currentMonth comment out for testing
@@ -677,6 +683,11 @@ void getTime()
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
+  Serial.println("...");
+  Serial.println("'''''''''''''''''''''''''''''''''''");
+  Serial.println("********** callback ***************");  
+  Serial.println("...................................."); 
+  Serial.println("..."); 
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
@@ -757,6 +768,11 @@ void callback(char *topic, byte *payload, unsigned int length)
  ***************************************/
 void reconnect()
 {
+  Serial.println("...");
+  Serial.println("**********************************");
+  Serial.println("********** reconect **************");  
+  Serial.println("**********************************"); 
+  Serial.println("...");
   Serial.println("**** Starting Reconnecting to MQTT broker...");
   int MQTTretryCount = 0; // Add a retry counter
   while (!client.connected())
@@ -807,6 +823,11 @@ void reconnect()
 
 void publishTimeToMQTT()
 {
+  Serial.println("...");
+  Serial.println("**********************************");
+  Serial.println("**** publishTimeToMQTT ***********");  
+  Serial.println("**********************************"); 
+  Serial.println("...");
   Serial.println("Publishing time to MQTT");
   char timeStr[50];
   timeClient.update();
@@ -855,6 +876,11 @@ void publishTimeToMQTT()
  * *************************************/
 void publishSensorValues()
 {
+  Serial.println("...");
+  Serial.println("**********************************");
+  Serial.println("**** publishSensorValues *********");  
+  Serial.println("**********************************"); 
+  Serial.println("...");
   String redStr = String(redTemp);
   String greenStr = String(greenTemp);
   String blueStr = String(blueTemp);
@@ -898,6 +924,11 @@ void publishSensorValues()
  ***************************************/
 void storeDataToFirebase()
 {
+  Serial.println("...");
+  Serial.println("**********************************");
+  Serial.println("**** storeDataToFirebase *********");  
+  Serial.println("**********************************"); 
+  Serial.println("...");
   // Increment and reset storeCount if it exceeds 100
   storeCount++;
   if (storeCount > 100)
@@ -947,7 +978,7 @@ void storeDataToFirebase()
       if (retryCount >= maxRetries)
       {
         Serial.println("Max retries reached. Attempting to reconnect to Firebase...");
-        connecttoFirebase(); // Attempt to reconnect to Firebase
+        connectToFirebase(); // Attempt to reconnect to Firebase
         break;               // Exit the loop after max retries
       }
 
@@ -1008,7 +1039,7 @@ void storeDataToFirebase()
 //       {
 //         Serial.println("Failed to store data to Firebase");
 //         Serial.println(fbdo.errorReason());
-//         connecttoFirebase(); // Attempt to reconnect to Firebase
+//         connectToFirebase(); // Attempt to reconnect to Firebase
 //         break;               // Exit the loop after max retries
 //       }
 //       delay(retryDelay); // Wait before retrying
@@ -1031,6 +1062,11 @@ void storeDataToFirebase()
  ***************************************/
 void retrieveLastStoredData()
 {
+  Serial.println("...");
+  Serial.println("**********************************");
+  Serial.println("*** retrieveLastStoredData *******");  
+  Serial.println("**********************************"); 
+  Serial.println("...");
   Serial.println("Retrieving setTime from Firebase...");
   // Retrieve setTime
   if (Firebase.RTDB.getString(&fbdo, "/setTime/F_B_AMtime"))
@@ -1231,8 +1267,13 @@ void checkMemory()
  *  Attempt to sign up to Firebase  *
  *          start                   *
  ***********************************/
-void connecttoFirebase()
+void connectToFirebase()
 {
+  Serial.println("...");
+  Serial.println("**********************************");
+  Serial.println("**** connectToFirebase ***********");  
+  Serial.println("**********************************"); 
+  Serial.println("...");
   int DatdBaseretryCount = 0;
   const int maxRetries = 5; // Maximum number of retries
   while (!Firebase.signUp(&config, &auth, "", ""))
@@ -1304,12 +1345,11 @@ void connecttoFirebase()
 
 void storeDateToFirebase()
 {
-  
-  Serial.println(" ");
-  Serial.println("*******************  ");
-  Serial.print("Storing date to Firebase");
-  Serial.print("  ********************");
-  Serial.print("");
+  Serial.println("...");
+  Serial.println("**********************************");
+  Serial.println("***** storeDateToFirebase ********");  
+  Serial.println("**********************************"); 
+
    // Increment dateCount
   dateCount++;
 
@@ -1345,7 +1385,7 @@ void storeDateToFirebase()
         pendingTestMonth = currentMonth;
 
         // Attempt to reconnect to Firebase
-        connecttoFirebase();
+        connectToFirebase();
     }
   // if (!success)
   // {
@@ -1356,7 +1396,7 @@ void storeDateToFirebase()
   //   Serial.println(pendingTestMonth);
   //   Serial.print("1119 ******* Failed to store date in Firebase.  ");
   //   Serial.println(fbdo.errorReason());
-  //   connecttoFirebase(); // Attempt to reconnect to Firebase
+  //   connectToFirebase(); // Attempt to reconnect to Firebase
 
   //   // Mark date storage as pending
   //   pendingDateStorage = true;
@@ -1372,7 +1412,7 @@ void storeDateToFirebase()
   // {
   //   Serial.print("1134 ******** Failed to store date in Firebase.  ");
   //   Serial.println(fbdo.errorReason());
-  //   connecttoFirebase(); // Attempt to reconnect to Firebase
+  //   connectToFirebase(); // Attempt to reconnect to Firebase
   // }
 }
 /************************************
@@ -1387,6 +1427,11 @@ void storeDateToFirebase()
  ******************************************/
 void retrieveStoreCount()
 {
+  Serial.println("...");
+  Serial.println("**********************************");
+  Serial.println("***** retrieveStoreCount *********");  
+  Serial.println("**********************************"); 
+  Serial.println("...");
   if (Firebase.RTDB.getInt(&fbdo, "/storeCount"))
   {
     storeCount = fbdo.intData();
@@ -1410,6 +1455,11 @@ void retrieveStoreCount()
  ******************************************/
 void retrieveDateCount()
 {
+  Serial.println("...");
+  Serial.println("**********************************");
+  Serial.println("***** retrieveDateCount **********");  
+  Serial.println("**********************************"); 
+  Serial.println("...");
   if (Firebase.RTDB.getInt(&fbdo, "/dateCount"))
   {
     dateCount = fbdo.intData();
@@ -1430,6 +1480,11 @@ void retrieveDateCount()
 
  void upDateSensors()
  {
+  Serial.println("...");
+  Serial.println("**********************************");
+  Serial.println("***** upDateSensors **************");  
+  Serial.println("**********************************"); 
+  Serial.println("...");
    // Serial.print("Requesting temperatures...");
    sensors.requestTemperatures();
    // Serial.println("DONE");
@@ -1511,6 +1566,11 @@ void retrieveDateCount()
 
 void relay_Control()
 {
+  Serial.println("...");
+  Serial.println("**********************************");
+  Serial.println("***** relat_Control **************");  
+  Serial.println("**********************************"); 
+  Serial.println("...");
   int targetTemp = AmFlag ? amTemp : pmTemp;
   if (redTemp < targetTemp)
   {
@@ -1541,7 +1601,11 @@ void relay_Control()
                                     start
    ************************************************************/
   void setTargetTemperature(){
-
+    Serial.println("...");
+    Serial.println("**********************************");
+    Serial.println("***** setTargetTemperature *******");  
+    Serial.println("**********************************"); 
+    Serial.println("...");
   if (Am)
   {
     if (amHours == Hours && amMinutes == Minutes)
@@ -1550,9 +1614,12 @@ void relay_Control()
       // Serial.println("amHours == Hours && amMinutes == Minutes");
       AmFlag = true;
       amTemp = amTemperature;
-      int myTemp = amTemp;
+      int myTemp =   Serial.print("...myTemp: ");
+      Serial.print(myTemp);;
       sprintf(sensVal, "%d", myTemp);
       client.publish("targetTemperature", sensVal, true);
+      Serial.print("...AM myTemp: ");
+      Serial.print(myTemp);
     }
   }
   else
@@ -1565,8 +1632,25 @@ void relay_Control()
       int myTemp = pmTemp;
       sprintf(sensVal, "%d", myTemp);
       client.publish("targetTemperature", sensVal, true);
+      Serial.print("...PM myTemp: ");
+      Serial.print(myTemp);
     }
   }
+  Serial.print("....");
+  Serial.print("££££££££££££££££££££££££££££");
+  Serial.print("amHours: ");
+  Serial.print(amHours);
+  Serial.print("...amMinutes: ");
+  Serial.print(amMinutes);
+  Serial.print("...Hours: ");
+  Serial.print(Hours);
+
+  Serial.print("...pmHours: ");
+  Serial.print(pmHours);
+  Serial.print("...pmMinutes: ");
+  Serial.print(pmMinutes);
+ Serial.print("£££££££££££££££££££££££££££££££££££££"); 
+ Serial.print("......");
 }
 /*************************************************************
                              Heater Control
