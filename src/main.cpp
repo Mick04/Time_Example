@@ -128,9 +128,9 @@ PubSubClient client(espClient);
  *   Pin Definitions     *
  *       start           *
  ************************/
-#define Relay_Pin D5
-#define LED_Pin D6
-// #define LED_BUILTIN 2
+#define Relay_Pin 14
+#define LED_Pin 12
+// #define LED_BUILTIN
 OneWire ds(D7);
 
 /*************************
@@ -280,6 +280,7 @@ void setup()
    *          start                   *
    ***********************************/
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(Relay_Pin, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
   /************************************
    *  Initialize the LED pin as an    *
@@ -1568,12 +1569,24 @@ void relay_Control()
 {
   Serial.println("...");
   Serial.println("###################################");
-  Serial.println("***** relat_Control **************");  
+  Serial.println("***** relay_Control **************");  
   Serial.println("###################################"); 
   Serial.println("...");
   int targetTemp = AmFlag ? amTemp : pmTemp;
+  Serial.print("..........");
+  Serial.print("..........");
+  Serial.print("targetTemp: ");
+  Serial.println(targetTemp);
+  Serial.print("redTemp: ");
+  Serial.println(redTemp);
+  Serial.print("..........");
   if (redTemp < targetTemp)
   {
+    Serial.println("Relay on");
+     digitalWrite(Relay_Pin, HIGH); // Turn relay ON
+  delay(2000);                  // Wait 2 seconds
+  digitalWrite(Relay_Pin, LOW); // Turn relay OFF
+  delay(2000); 
     digitalWrite(Relay_Pin, HIGH);
     digitalWrite(LED_Pin, HIGH);    // LED_Pin on
     digitalWrite(LED_BUILTIN, LOW); // LED_Pin on
