@@ -8,6 +8,7 @@
 #include <WiFiUdp.h>
 #include <NTPClient.h>
 #include <TimeLib.h>
+#include <time.h>
 /*****************************
  *     TimeLib Library       *
  *         end               *
@@ -46,6 +47,17 @@
  *    DS18B20 Library        *
  *        end                *
  ****************************/
+
+/*******************************
+ *   ESP Mail Client Library   *
+ *       start                 *
+ ******************************/
+#include <ESP_Mail_Client.h>
+/*******************************
+ *   ESP Mail Client Library   *
+ *       end                   *
+ ******************************/
+
 /*****************************
  *    Debugging Macros       *
  *        start              *
@@ -218,6 +230,8 @@ void retrieveStoreCount();
 void retrieveDateCount();
 void setTargetTemperature();
 void checkCurrent();
+void sendEmail(const String &subject, const String &message);
+void setSystemTimeFromNTP();
 /*****************************
  *     Function Prototypes    *
  *         end                *
@@ -258,6 +272,22 @@ const char *minute_topic = "time/minute"; // not used
  *         end                *
  ******************************/
 /******************************
+ *    Email Credentials       *
+ *         start              *
+ *****************************/
+#define SENDER_EMAIL "esp8266heaterapp@gmail.com";
+#define SENDER_PASSWORD "uuyd ifav mpzd vuoj";
+#define RECIPIENT_EMAIL "mac5y4@talktalk.net"
+#define SMTP_HOST "smtp.gmail.com";
+#define SMTP_PORT 587;
+/******************************
+ *    Email Credentials       *
+ *         end                *
+ *****************************/
+
+SMTPSession smtp; // Define the SMTP session object globaly
+
+/******************************
  *    Create a secure client  *
  *        for MQTT            *
  *         start              *
@@ -295,8 +325,9 @@ OneWire ds(4);
  *       start           *
  ************************/
 unsigned long presentTime = millis();
-unsigned long previousMillis = millis();
-unsigned long interval = 5000;
+unsigned long previousTime = millis();
+unsigned long interval = 1200000; // change to 1200000 - 20 minutes
+bool firstRunE_Mail = true;    // Flag to check if it's the first run for email sending
 int currentDay;
 int currentMonth = 1;
 /******************************************
@@ -489,7 +520,7 @@ void setup()
 
   timeClient.begin();  // start the timeClient
   timeClient.update(); // update the timeClient
-
+  setSystemTimeFromNTP(); // Set the system time from NTP
   espClient.setInsecure();                  // set the client to be insecure
   client.setServer(mqtt_server, mqtt_port); // set the server and port for the client
   client.setCallback(callback);             // set the callback function for the client
@@ -574,7 +605,7 @@ void loop()
     getTime(); // call the function to get the time
     firstrun = false;
   }
-checkCurrent();
+  checkCurrent();
   /***************************************
    * Check if the client is connected    *
    *       to the MQTT broker            *
@@ -631,10 +662,10 @@ void getTime()
 {
   timeClient.update();
   time_t epochTime = timeClient.getEpochTime();
-  // currrentDay and currentMonth comment out for testing
-  // currentDay = day(epochTime);
-  // currentMonth = month(epochTime);
-  // currentDay and currentMonth comment out for testing
+
+  currentDay = day(epochTime);
+  currentMonth = month(epochTime);
+
   int currentYear = year(epochTime);
   Hours = hour(epochTime);
   Minutes = minute(epochTime);
@@ -645,14 +676,6 @@ void getTime()
   // Serial.printf("Date and Time: %02d-%02d-%04d %02d:%02d:%02d\n", currentDay, currentMonth, currentYear, Hours, Minutes, currentSecond);
   delay(1000);
 
-  timeCount++;
-
-  if (timeCount == 1000)
-  {
-    timeCount = 0;
-    currentDay++; // Increment currentDay for testing
-    asBeenSaved = false;
-  }
   if (currentDay == nextDay)
   {
     if (currentMonth == 2) // February
@@ -667,9 +690,7 @@ void getTime()
           // publishTimeToMQTT();
           storeDateToFirebase();
           asBeenSaved = true;
-          currentDay = 1;
-          nextDay = 1;
-          currentMonth++;
+          nextDay = 1; // Reset nextDay to 1 for the next month
         }
       }
       else // Non-leap year
@@ -680,9 +701,7 @@ void getTime()
           // publishTimeToMQTT();
           storeDateToFirebase();
           asBeenSaved = true;
-          currentDay = 1;
-          nextDay = 1;
-          currentMonth++;
+          nextDay = 1; // Reset nextDay to 1 for the next month
           Serial.println("Non-leap year February");
         }
       }
@@ -696,9 +715,7 @@ void getTime()
         // publishTimeToMQTT();
         storeDateToFirebase();
         asBeenSaved = true;
-        currentDay = 1;
-        nextDay = 1;
-        currentMonth++;
+        nextDay = 1; // Reset nextDay to 1 for the next month
       }
     }
     else // Months with 31 days
@@ -710,9 +727,7 @@ void getTime()
         // publishTimeToMQTT();
         storeDateToFirebase();
         asBeenSaved = true;
-        currentDay = 1;
-        nextDay = 1;
-        currentMonth++;
+        nextDay = 1; // Reset nextDay to 1 for the next month
       }
     }
 
@@ -730,9 +745,8 @@ void getTime()
       Serial.println("line 658");
       // publishTimeToMQTT();
       asBeenSaved = true;
+      nextDay++; // Increment nextDay for the next day
     }
-    // Increment nextDay for the next iteration
-    nextDay++;
   }
 }
 
@@ -1482,17 +1496,17 @@ void setTargetTemperature()
       Serial.print(myTemp);
     }
     DEBUG_PRINTLN_AMTIME("Hours minute all =: ");
-  DEBUG_PRINT_AMTIME("amHours: ");
-  DEBUG_PRINTLN_AMTIME(amHours);
+    DEBUG_PRINT_AMTIME("amHours: ");
+    DEBUG_PRINTLN_AMTIME(amHours);
 
-  DEBUG_PRINT_AMTIME("amMinutes: ");
-  DEBUG_PRINTLN_AMTIME(amMinutes);
+    DEBUG_PRINT_AMTIME("amMinutes: ");
+    DEBUG_PRINTLN_AMTIME(amMinutes);
 
-  DEBUG_PRINT_AMTIME("pmHours: ");
-  DEBUG_PRINTLN_AMTIME(pmHours);
+    DEBUG_PRINT_AMTIME("pmHours: ");
+    DEBUG_PRINTLN_AMTIME(pmHours);
 
-  DEBUG_PRINT_AMTIME("pmMinutes: ");
-  DEBUG_PRINTLN_AMTIME(pmMinutes);
+    DEBUG_PRINT_AMTIME("pmMinutes: ");
+    DEBUG_PRINTLN_AMTIME(pmMinutes);
   }
 }
 /****************************************
@@ -1526,20 +1540,99 @@ void checkCurrent()
   // Check if the relay is ON or OFF
 
   // Print actual relay state
-  if (digitalRead(Relay_Pin) == HIGH){
+  if (digitalRead(Relay_Pin) == HIGH)
+  {
     DEBUG_PRINTLN_RELAY_STATE("✅ Relay is ON  ");
   }
-  else{
+  else
+  {
     DEBUG_PRINTLN_RELAY_STATE("  ❌ Relay is OFF");
   }
-  if (abs(rmsCurrent) < CURRENT_THRESHOLD){
+  Serial.print("CURRENT_THRESHOLD: ");
+  Serial.println(CURRENT_THRESHOLD);
+  Serial.print("rmsCurrent: ");
+  Serial.println(rmsCurrent);
+  if (abs(rmsCurrent) < CURRENT_THRESHOLD)
+  {
+
     DEBUG_PRINTLN_RELAY_STATE("  ⚠️ Heater is OFF or not working!  ");
+    if (firstRunE_Mail == true)
+    {
+      firstRunE_Mail = false;
+      sendEmail("From ESP32: ", " Heater not working! ");
+    }
+    presentTime = millis(); // Update presentTime before the check
+    if (presentTime - previousTime > interval)
+    {
+      previousTime = presentTime;
+      sendEmail("From ESP32: ", " Heater not working! ");
+    }
   }
-  else{
+  else
+  {
     DEBUG_PRINTLN_RELAY_STATE("  ✅ Heater is ON and drawing current.  ");
-}
+  }
 }
 /**************************************
  *        Check Current               *
  *            end                     *
  * ************************************/
+
+/*************************************
+ * Function to send an email       *
+ *            start                 *
+ ************************************/
+void sendEmail(const String &subject, const String &message)
+{
+  SMTP_Message msg;
+
+  msg.sender.name = "ESP32";
+  msg.sender.email = SENDER_EMAIL;
+  msg.subject = subject;
+  msg.addRecipient("Recipient", RECIPIENT_EMAIL);
+
+  msg.text.content = message;
+  msg.text.charSet = "us-ascii";
+  msg.text.transfer_encoding = Content_Transfer_Encoding::enc_7bit;
+
+  // Set the SMTP server and login credentials
+  smtp.callback([](SMTP_Status status)
+                { Serial.println(status.info()); });
+
+  ESP_Mail_Session session;
+  session.server.host_name = SMTP_HOST;
+  session.server.port = SMTP_PORT;
+  session.login.email = SENDER_EMAIL;
+  session.login.password = SENDER_PASSWORD;
+  session.login.user_domain = "";
+
+  if (!smtp.connect(&session))
+  {
+    Serial.println("Could not connect to mail server");
+    return;
+  }
+
+  if (!MailClient.sendMail(&smtp, &msg))
+  {
+    Serial.print("Error sending Email, ");
+    Serial.println(smtp.errorReason());
+  }
+  else
+  {
+    Serial.println("Email sent successfully!");
+  }
+  smtp.closeSession();
+}
+/***************************************
+ *  Function to send an email          *
+ *            end                      *
+ ***************************************/
+
+// Call this after timeClient.update();
+void setSystemTimeFromNTP()
+{
+  timeClient.update();
+  time_t now = timeClient.getEpochTime();
+  struct timeval tv = {.tv_sec = now};
+  settimeofday(&tv, nullptr);
+}
