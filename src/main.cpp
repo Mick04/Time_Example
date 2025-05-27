@@ -326,7 +326,7 @@ OneWire ds(4);
  ************************/
 unsigned long presentTime = millis();
 unsigned long previousTime = millis();
-unsigned long interval = 1200000; // change to 1200000 - 20 minutes
+unsigned long interval = 3600000; // change to 1200000 - 20 minutes
 bool firstRunE_Mail = true;    // Flag to check if it's the first run for email sending
 int currentDay;
 int currentMonth = 1;
