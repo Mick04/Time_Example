@@ -59,6 +59,16 @@
  ******************************/
 
 /*****************************
+ *   FastLED Library         *
+ *      start                *
+ ****************************/
+#include <FastLED.h>
+/*****************************
+ *   FastLED Library         *
+ *      end                  *
+ ****************************/
+
+/*****************************
  *    Debugging Macros       *
  *        start              *
  ****************************/
@@ -232,6 +242,8 @@ void setTargetTemperature();
 void checkCurrent();
 void sendEmail(const String &subject, const String &message);
 void setSystemTimeFromNTP();
+void clearLeds();
+void showSingleLed(int index, CRGB color);
 /*****************************
  *     Function Prototypes    *
  *         end                *
@@ -319,6 +331,28 @@ OneWire ds(4);
  *   Pin Definitions     *
  *       end             *
  ************************/
+/*************************
+ *   FastLED Definitions  *
+ *       start           *
+ ************************/
+#define NUM_LEDS 4
+#define DATA_PIN 32
+#define LED_TYPE WS2811
+#define COLOR_ORDER RGB
+/*************************
+ *   FastLED Definitions  *
+ *       end             *
+ ************************/
+
+/*************************
+ *   FastLED Variables    *
+ *       start           *
+ ************************/
+CRGB leds[NUM_LEDS];
+/*************************
+ *   FastLED Variables    *
+ *       end             *
+ ************************/
 
 /*************************
  *    Time Variables     *
@@ -327,7 +361,7 @@ OneWire ds(4);
 unsigned long presentTime = millis();
 unsigned long previousTime = millis();
 unsigned long interval = 3600000; // change to 1200000 - 20 minutes
-bool firstRunE_Mail = true;    // Flag to check if it's the first run for email sending
+bool firstRunE_Mail = true;       // Flag to check if it's the first run for email sending
 int currentDay;
 int currentMonth = 1;
 /******************************************
@@ -494,6 +528,18 @@ void setup()
    * output and turn it off           *
    *          end                     *
    ***********************************/
+
+  /**************************************
+   *      Initialize the FastLED        *
+   *            start                  *
+   * ************************************/
+  FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
+  FastLED.setBrightness(100);
+  clearLeds();
+  /**************************************
+   *      Initialize the FastLED        *
+   *            end                    *
+   ************************************/
   /**************************************
    *      Initialize the ACS712         *
    *             start                  *
@@ -518,9 +564,9 @@ void setup()
 
   connectToFirebase(); // call the function to connect to Firebase
 
-  timeClient.begin();  // start the timeClient
-  timeClient.update(); // update the timeClient
-  setSystemTimeFromNTP(); // Set the system time from NTP
+  timeClient.begin();                       // start the timeClient
+  timeClient.update();                      // update the timeClient
+  setSystemTimeFromNTP();                   // Set the system time from NTP
   espClient.setInsecure();                  // set the client to be insecure
   client.setServer(mqtt_server, mqtt_port); // set the server and port for the client
   client.setCallback(callback);             // set the callback function for the client
@@ -635,19 +681,41 @@ void loop()
  **************************************/
 void ConnectToWiFi()
 {
-  presentTime = millis();
+  bool ledOn = false;
+  long wifiPreviousTime = millis();
+  int WiFiDelay = 500;
+ // presentTime = millis();
   WiFi.begin(ssid, password);
+
   while (WiFi.status() != WL_CONNECTED)
   {
+    long presentTime = millis();
+    if (presentTime - wifiPreviousTime >= WiFiDelay)
+    {}
+      wifiPreviousTime = presentTime;
+    ledOn = !ledOn; // Toggle state
+
+    if (ledOn) {
+      showSingleLed(0, CRGB::Orange);
+    } else {
+      clearLeds();
+    }
+
+    Serial.print(".");
+  }
+
+  delay(10); // Short delay to avoid watchdog issues
+
     client.publish("wemos/status", "online", false);
     delay(1000);
-    Serial.println("Connecting to WiFi...");
+    Serial.println("Connecting to WiFi...");\
+    showSingleLed(0, CRGB::Green);
   }
   long rssi = WiFi.RSSI();
   DEBUG_PRINT_RSSI("Signal strength (RSSI): ");
   DEBUG_PRINT_RSSI(rssi);
   DEBUG_PRINT_RSSI(" dBm");
-}
+
 
 /***************************************
  *    function to connect to WiFi      *
@@ -1635,4 +1703,19 @@ void setSystemTimeFromNTP()
   time_t now = timeClient.getEpochTime();
   struct timeval tv = {.tv_sec = now};
   settimeofday(&tv, nullptr);
+}
+
+// Helper to clear all LEDs
+void clearLeds()
+{
+  fill_solid(leds, NUM_LEDS, CRGB::Black);
+  FastLED.show();
+}
+
+// Helper to turn on just one LED at a time
+void showSingleLed(int index, CRGB color)
+{
+  // clearLeds();
+  leds[index] = color;
+  FastLED.show();
 }
