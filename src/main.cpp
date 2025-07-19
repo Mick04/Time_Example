@@ -313,20 +313,20 @@ PubSubClient client(espClient);
  *         end                *
  ******************************/
 
-#define ONE_WIRE_BUS 4 // Data wire is plugged into port 2 on the Wemos D1 Mini
+#define ONE_WIRE_BUS 27 // Data wire is plugged into port 2 on the Wemos D1 Mini
 
 /*************************
  *   Pin Definitions     *
  *       start           *
  ************************/
-#define Relay_Pin 5
-#define LED_Pin 2 // Built in LED
+#define Relay_Pin 26 // change to pin
+#define LED_Pin 2    // Built in LED
 /*****************************
  * This line is readt to be  *
  * used for the LED pin's    *
  **************************************************************************************************/
 // Add more LED's LED-1,LED_2,LED_3,LED_4 LED = Power on/off,LED_1 = Conetted to WiFi,LED_2 = Connected to MQTT,LED_3 = Connected to Firebase,LED_4 = Heater on/off
-OneWire ds(4);
+// OneWire ds(26);
 /*************************
  *   Pin Definitions     *
  *       end             *
@@ -336,7 +336,7 @@ OneWire ds(4);
  *       start           *
  ************************/
 #define NUM_LEDS 4
-#define DATA_PIN 32
+#define DATA_PIN 25
 #define LED_TYPE WS2811
 #define COLOR_ORDER RGB
 /*************************
@@ -684,20 +684,24 @@ void ConnectToWiFi()
   bool ledOn = false;
   long wifiPreviousTime = millis();
   int WiFiDelay = 500;
- // presentTime = millis();
+  // presentTime = millis();
   WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED)
   {
     long presentTime = millis();
     if (presentTime - wifiPreviousTime >= WiFiDelay)
-    {}
-      wifiPreviousTime = presentTime;
+    {
+    }
+    wifiPreviousTime = presentTime;
     ledOn = !ledOn; // Toggle state
 
-    if (ledOn) {
+    if (ledOn)
+    {
       showSingleLed(0, CRGB::Orange);
-    } else {
+    }
+    else
+    {
       clearLeds();
     }
 
@@ -706,16 +710,15 @@ void ConnectToWiFi()
 
   delay(10); // Short delay to avoid watchdog issues
 
-    client.publish("wemos/status", "online", false);
-    delay(1000);
-    Serial.println("Connecting to WiFi...");\
-    showSingleLed(0, CRGB::Green);
-  }
-  long rssi = WiFi.RSSI();
-  DEBUG_PRINT_RSSI("Signal strength (RSSI): ");
-  DEBUG_PRINT_RSSI(rssi);
-  DEBUG_PRINT_RSSI(" dBm");
-
+  client.publish("wemos/status", "online", false);
+  delay(1000);
+  Serial.println("Connecting to WiFi...");
+  showSingleLed(0, CRGB::Green);
+}
+long rssi = WiFi.RSSI();
+DEBUG_PRINT_RSSI("Signal strength (RSSI): ");
+DEBUG_PRINT_RSSI(rssi);
+DEBUG_PRINT_RSSI(" dBm");
 
 /***************************************
  *    function to connect to WiFi      *
@@ -902,9 +905,29 @@ void callback(char *topic, byte *payload, unsigned int length)
  ***************************************/
 void reconnect()
 {
+  bool MQTTLedOn = false;
+  long MQTTPreviousTime = millis();
+  int MQTTDelay = 500;
+  // presentTime = millis();
   int MQTTretryCount = 0; // Add a retry counter
   while (!client.connected())
   {
+    long presentTime = millis();
+    if (presentTime - MQTTPreviousTime >= MQTTDelay)
+    {
+    }
+    MQTTPreviousTime = presentTime;
+    MQTTLedOn = !MQTTLedOn; // Toggle state
+
+    if (MQTTLedOn)
+    {
+      showSingleLed(1, CRGB::Orange);
+    }
+    else
+    {
+      clearLeds();
+    }
+
     if (client.connect("wemosClient", mqtt_user, mqtt_password, "wemos/status", 0, true, "offline"))
     {
       Serial.println("Connected to MQTT broker!");
@@ -941,6 +964,7 @@ void reconnect()
       delay(5000);
     }
   }
+  showSingleLed(1, CRGB::Green);
 }
 
 /***************************************
@@ -1244,10 +1268,24 @@ void checkMemory()
  ***********************************/
 void connectToFirebase()
 {
+   bool FirebaseLedOn = false;
+  long FirebasePreviousTime = millis();
+  int FirebaseDelay = 500;
   int DatdBaseretryCount = 0;
   const int maxRetries = 5; // Maximum number of retries
   while (!Firebase.signUp(&config, &auth, "", ""))
   {
+        long presentTime = millis();
+    if (presentTime - FirebasePreviousTime >= FirebaseDelay)
+    {}
+      FirebasePreviousTime = presentTime;
+    FirebaseLedOn = !FirebaseLedOn; // Toggle state
+
+    if (FirebaseLedOn) {
+      showSingleLed(2, CRGB::Orange);
+    } else {
+      clearLeds();
+    }
 
     DatdBaseretryCount++;
 
@@ -1275,7 +1313,7 @@ void connectToFirebase()
   signupOK = true;
   // set the token status callback
   config.token_status_callback = tokenStatusCallback;
-
+showSingleLed(2, CRGB::Green);
   // Initialize Firebase
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
@@ -1484,7 +1522,6 @@ void upDateSensors()
 
 void relay_Control()
 {
-
   int targetTemp = AmFlag ? amTemp : pmTemp;
 
   DEBUG_PRINT_RELAY_CONTROL("targetTemp: ");
@@ -1511,6 +1548,7 @@ void relay_Control()
     // if (!heaterOn) {
     //   startHeaterTimer();
     // }
+    showSingleLed(3, CRGB::Red);
   }
   else if (redTemp > targetTemp)
   {
@@ -1520,6 +1558,7 @@ void relay_Control()
     // digitalWrite(LED_BUILTIN, HIGH); // LED_Pin off
     heaterStatus = false;
     // heaterOn = false;
+    showSingleLed(3, CRGB::Green);
   }
 }
 /*************************************************************
