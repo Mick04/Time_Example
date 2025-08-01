@@ -48,6 +48,25 @@
  *        end                *
  ****************************/
 
+/***************************
+ *       SCT-013-020.       *
+ *     Current Sensor.     *
+ *       start              *
+ ***************************/
+#include "EmonLib.h"
+EnergyMonitor emon1;
+// Analog input pin
+#define CURRENT_SENSOR_PIN 33
+int currentCount = 0;
+int averageCount = 0; // Number of readings to average
+double totalIrms = 0;
+double totalAverageIrms;
+/*****************************
+ *       SCT-013-020         *
+ *     Current Sensor.       *
+ *          end              *
+ *****************************/
+
 /*******************************
  *   ESP Mail Client Library   *
  *       start                 *
@@ -398,14 +417,14 @@ bool AmFlag;
  *   ACS712 Variables    *
  *       start           *
  ************************/
-const int ACS712_PIN = 34;               // Analog pin
-const float VREF = 3.3;                  // Reference voltage
-const int ADC_RES = 4095;                // 12-bit ADC
-const float ZERO_CURRENT_VOLTAGE = 2.39; // Midpoint when no current
-const float SENSITIVITY = 0.185;         // Volts per amp (ACS712-5A = 185mV/A)
-const float CURRENT_THRESHOLD = 0.2;     // Amps — adjust for your system
+// const int ACS712_PIN = 34;               // Analog pin
+// const float VREF = 3.3;                  // Reference voltage
+// const int ADC_RES = 4095;                // 12-bit ADC
+// const float ZERO_CURRENT_VOLTAGE = 2.39; // Midpoint when no current
+// const float SENSITIVITY = 0.185;         // Volts per amp (ACS712-5A = 185mV/A)
+// const float CURRENT_THRESHOLD = 0.2;     // Amps — adjust for your system
 
-float lastVoltage;
+// float lastVoltage;
 /*************************
  *   ACS712 Variables    *
  *       end             *
@@ -521,8 +540,8 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(Relay_Pin, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
-  pinMode(ACS712_PIN, INPUT);    // Set the ACS712 pin as input
-  digitalWrite(ACS712_PIN, LOW); // Set the ACS712 pin to low
+  // pinMode(ACS712_PIN, INPUT);    // Set the ACS712 pin as input
+  // digitalWrite(ACS712_PIN, LOW); // Set the ACS712 pin to low
   /************************************
    *  Initialize the LED pin as an    *
    * output and turn it off           *
@@ -540,18 +559,34 @@ void setup()
    *      Initialize the FastLED        *
    *            end                    *
    ************************************/
-  /**************************************
-   *      Initialize the ACS712         *
-   *             start                  *
-   * ************************************/
+  // /**************************************
+  //  *      Initialize the ACS712         *
+  //  *             start                  *
+  //  * ************************************/
 
-  analogReadResolution(12);       // ESP32 default is 12-bit
-  analogSetAttenuation(ADC_11db); // Makes full-scale voltage ~3.3V
+  // analogReadResolution(12);       // ESP32 default is 12-bit
+  // analogSetAttenuation(ADC_11db); // Makes full-scale voltage ~3.3V
 
-  /************************************
-   *      Initialize the ACS712       *
-   *            end                   *
-   ************************************/
+  // /************************************
+  //  *      Initialize the ACS712       *
+  //  *            end                   *
+  //  ************************************/
+
+  /***************************************
+   *     Initialize the EmonLib          *
+   *      Setup the SCT-013-020.         *
+   *         current sensor.             *
+   *             start                   *
+   **************************************/
+
+  emon1.current(CURRENT_SENSOR_PIN, 30.0); // Current sensor pin and calibration value
+
+  /***************************************
+   *     Initialize the EmonLib          *
+   *      Setup the SCT-013-020.         *
+   *         current sensor.             *
+   *             end                     *
+   **************************************/
 
   Serial.begin(115200);
   delay(500);
@@ -589,7 +624,7 @@ void setup()
   {
     Serial.println("red sensor detected.");
   }
-  if (!sensors.getAddress(green, 1))
+  if (!sensors.getAddress(blue, 1))
   {
     Serial.println("green sensor not found.");
   }
@@ -597,7 +632,8 @@ void setup()
   {
     Serial.println("green sensor detected.");
   }
-  if (!sensors.getAddress(blue, 2))
+  
+  if (!sensors.getAddress(green, 2))
   {
     Serial.println("blue sensor not found.");
   }
@@ -651,7 +687,7 @@ void loop()
     getTime(); // call the function to get the time
     firstrun = false;
   }
-  checkCurrent();
+  checkCurrent(); // remove once proven to work
   /***************************************
    * Check if the client is connected    *
    *       to the MQTT broker            *
@@ -745,7 +781,6 @@ void getTime()
   timeClient.setTimeOffset(offset);
   // Print the complete date and time
   // Serial.printf("Date and Time: %02d-%02d-%04d %02d:%02d:%02d\n", currentDay, currentMonth, currentYear, Hours, Minutes, currentSecond);
-  delay(1000);
 
   if (currentDay == nextDay)
   {
@@ -961,7 +996,7 @@ void reconnect()
         retrieveDateCount();  // retrieve the dateCount from Firebase
         // retrieveTime();      // retrieve the time from Firebase
       }
-      delay(5000);
+      //  delay (5000);
     }
   }
   showSingleLed(1, CRGB::Green);
@@ -1008,7 +1043,7 @@ void publishSensorValues()
   client.publish(green_topic, greenStr.c_str());
   client.publish(blue_topic, blueStr.c_str());
   client.publish(storeCount_topic, storeCountStr.c_str());
-  delay(5000);
+  // delay(5000);
 }
 
 /***************************************
@@ -1268,22 +1303,26 @@ void checkMemory()
  ***********************************/
 void connectToFirebase()
 {
-   bool FirebaseLedOn = false;
+  bool FirebaseLedOn = false;
   long FirebasePreviousTime = millis();
   int FirebaseDelay = 500;
   int DatdBaseretryCount = 0;
   const int maxRetries = 5; // Maximum number of retries
   while (!Firebase.signUp(&config, &auth, "", ""))
   {
-        long presentTime = millis();
+    long presentTime = millis();
     if (presentTime - FirebasePreviousTime >= FirebaseDelay)
-    {}
-      FirebasePreviousTime = presentTime;
+    {
+    }
+    FirebasePreviousTime = presentTime;
     FirebaseLedOn = !FirebaseLedOn; // Toggle state
 
-    if (FirebaseLedOn) {
+    if (FirebaseLedOn)
+    {
       showSingleLed(2, CRGB::Orange);
-    } else {
+    }
+    else
+    {
       clearLeds();
     }
 
@@ -1313,7 +1352,7 @@ void connectToFirebase()
   signupOK = true;
   // set the token status callback
   config.token_status_callback = tokenStatusCallback;
-showSingleLed(2, CRGB::Green);
+  showSingleLed(2, CRGB::Green);
   // Initialize Firebase
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
@@ -1536,29 +1575,26 @@ void relay_Control()
     DEBUG_PRINTLN_RELAY_CONTROL(redTemp);
     DEBUG_PRINT_RELAY_CONTROL("targetTemp: ");
     DEBUG_PRINTLN_RELAY_CONTROL(targetTemp);
+
     digitalWrite(Relay_Pin, HIGH); // Turn relay ON
-    checkCurrent();
-    delay(2000); // Wait 2 seconds
-    // digitalWrite(Relay_Pin, LOW); // Turn relay OFF
-    // delay(2000);
-    //   digitalWrite(Relay_Pin, HIGH);
-    digitalWrite(LED_Pin, HIGH); // LED_Pin on
-    //   digitalWrite(LED_BUILTIN, LOW); // LED_Pin on
-    //   heaterStatus = true;
-    // if (!heaterOn) {
-    //   startHeaterTimer();
-    // }
+    digitalWrite(LED_Pin, HIGH);   // LED_Pin on
+    heaterStatus = true;
     showSingleLed(3, CRGB::Red);
+    checkCurrent();
+    sprintf(sensVal, "%s", heaterStatus ? "true" : "false");
+    //Serial.println("*************************************Heater is on");
+    client.publish("HeaterStatus", sensVal, true);
   }
   else if (redTemp > targetTemp)
   {
     DEBUG_PRINT_RELAY_CONTROL("Relay off");
     digitalWrite(Relay_Pin, LOW);
     digitalWrite(LED_Pin, LOW); // LED_Pin off
-    // digitalWrite(LED_BUILTIN, HIGH); // LED_Pin off
     heaterStatus = false;
-    // heaterOn = false;
     showSingleLed(3, CRGB::Green);
+    //Serial.println("*************************************Heater is off");
+     sprintf(sensVal, "%s", heaterStatus ? "true" : "false");
+client.publish("HeaterStatus", sensVal, true);
   }
 }
 /*************************************************************
@@ -1627,58 +1663,67 @@ void setTargetTemperature()
 ************************************************************/
 void checkCurrent()
 {
-  const int samples = 200;
-  float sumSq = 0;
-  for (int i = 0; i < samples; i++)
-  {
-    int raw = analogRead(ACS712_PIN);
-    float voltage = (raw / (float)ADC_RES) * VREF;
-    float current = (voltage - ZERO_CURRENT_VOLTAGE) / SENSITIVITY;
-    sumSq += current * current;
-    lastVoltage = voltage;
-    delay(1);
-  }
-  float rmsCurrent = sqrt(sumSq / samples);
+  double Irms = emon1.calcIrms(4480); // Number of samples
+  totalIrms += Irms;
+  currentCount++;
 
-  DEBUG_PRINT_RMS_CURRENT("AC RMS Current: ");
-  DEBUG_PRINTLN_RMS_CURRENT(rmsCurrent, 3);
-  DEBUG_PRINT_RMS_CURRENT("Measured last sample voltage: ");
-  DEBUG_PRINTLN_RMS_CURRENT(lastVoltage, 3);
-  // Check if the relay is ON or OFF
+  Serial.print("currentCount: ");
+  Serial.println(currentCount);
+  Serial.print("Irms: ");
+  Serial.println(Irms);
+  Serial.print("*******************Average Count: ");
+  Serial.println(averageCount);
+  if (currentCount >= 10)
+  {
+    double averageIrms = totalIrms / currentCount;
+    Serial.print("Average RMS Current over 10 readings: ");
+    Serial.print(averageIrms, 2);
+    Serial.println(" A");
+    averageCount++;
 
-  // Print actual relay state
-  if (digitalRead(Relay_Pin) == HIGH)
-  {
-    DEBUG_PRINTLN_RELAY_STATE("✅ Relay is ON  ");
-  }
-  else
-  {
-    DEBUG_PRINTLN_RELAY_STATE("  ❌ Relay is OFF");
-  }
-  Serial.print("CURRENT_THRESHOLD: ");
-  Serial.println(CURRENT_THRESHOLD);
-  Serial.print("rmsCurrent: ");
-  Serial.println(rmsCurrent);
-  if (abs(rmsCurrent) < CURRENT_THRESHOLD)
-  {
-
-    DEBUG_PRINTLN_RELAY_STATE("  ⚠️ Heater is OFF or not working!  ");
-    if (firstRunE_Mail == true)
+    totalAverageIrms += averageIrms;
+    if (averageCount >= 5)
     {
-      firstRunE_Mail = false;
-      sendEmail("From ESP32: ", " Heater not working! ");
+      double averagedCurrent = totalAverageIrms / averageCount;
+      Serial.print("Average over 3 blocks: ");
+      Serial.println(averagedCurrent, 2);
+
+      if (averagedCurrent >= 0.5 && averagedCurrent <= 0.55)
+      {
+        Serial.println("Heater is off");
+        if (firstRunE_Mail == true)
+        {
+          firstRunE_Mail = false;
+          sendEmail("From ESP32: ", " Heater not working! ");
+        }
+        presentTime = millis(); // Update presentTime before the check
+        if (presentTime - previousTime > interval)
+        {
+          previousTime = presentTime;
+          sendEmail("From ESP32: ", " Heater not working! ");
+        }
+        Serial.print("/////////////////////////averagedCurrent.");
+        Serial.println(averagedCurrent);
+      }
+      else if (averagedCurrent >= 0.58 && averagedCurrent <= 0.65)
+      {
+        Serial.println("Heater is on.");
+        Serial.print("/////////////////////////averagedCurrent.");
+        Serial.println(averagedCurrent);
+      }
+      else
+      {
+        Serial.println("Heater is in an unknown state.");
+      }
+
+      totalAverageIrms = 0;
+      averageCount = 0;
     }
-    presentTime = millis(); // Update presentTime before the check
-    if (presentTime - previousTime > interval)
-    {
-      previousTime = presentTime;
-      sendEmail("From ESP32: ", " Heater not working! ");
-    }
+    currentCount = 0;
+    totalIrms = 0;
   }
-  else
-  {
-    DEBUG_PRINTLN_RELAY_STATE("  ✅ Heater is ON and drawing current.  ");
-  }
+
+  // delay(500);
 }
 /**************************************
  *        Check Current               *
