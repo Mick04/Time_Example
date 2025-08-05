@@ -1758,3 +1758,4 @@ void showSingleLed(int index, CRGB color)
   leds[index] = color;
   FastLED.show();
 }
+
